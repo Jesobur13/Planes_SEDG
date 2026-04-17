@@ -1,0 +1,238 @@
+
+<style>
+  .wrap { max-width: 460px; margin: 1.5rem auto; padding: 0 1rem; }
+  .steps { display: flex; margin-bottom: 2rem; }
+  .step { flex: 1; text-align: center; font-size: 12px; padding-bottom: 8px; color: var(--color-text-tertiary); border-bottom: 2px solid var(--color-border-tertiary); transition: all 0.2s; }
+  .step.active { color: #185FA5; border-bottom-color: #185FA5; font-weight: 500; }
+  .step.done { color: #1D9E75; border-bottom-color: #1D9E75; }
+  .lbl { font-size: 13px; color: var(--color-text-secondary); display: block; margin-bottom: 6px; }
+  select, input[type=text] { width: 100%; box-sizing: border-box; }
+  .drop { border: 1.5px dashed var(--color-border-secondary); border-radius: var(--border-radius-lg); padding: 2rem 1rem; text-align: center; cursor: pointer; transition: background 0.15s; }
+  .drop.over, .drop.has-file { background: var(--color-background-secondary); border-style: solid; }
+  .btn-row { display: flex; gap: 8px; margin-top: 1.25rem; }
+  .btn-p { flex: 1; background: #185FA5; color: #fff; border: none; border-radius: var(--border-radius-md); padding: 10px; font-size: 14px; cursor: pointer; }
+  .btn-p:hover { background: #0C447C; }
+  .btn-p:disabled { background: var(--color-border-tertiary); cursor: not-allowed; }
+  .btn-b { background: none; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 10px 16px; font-size: 14px; cursor: pointer; color: var(--color-text-secondary); }
+  .err { display: none; margin-top: 0.75rem; padding: 0.6rem 0.9rem; background: var(--color-background-danger); border-radius: var(--border-radius-md); font-size: 13px; color: var(--color-text-danger); }
+  .spinner { width: 32px; height: 32px; border: 3px solid var(--color-border-tertiary); border-top-color: #185FA5; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .link-box { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; margin-top: 1rem; word-break: break-all; font-family: var(--font-mono); font-size: 12px; color: var(--color-text-info); }
+  .config-box { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.5rem; border: 0.5px solid var(--color-border-tertiary); }
+  .config-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; display: block; }
+  #script-url { font-size: 12px; font-family: var(--font-mono); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; }
+  .badge.ok { background: var(--color-background-success); color: var(--color-text-success); }
+  .badge.no { background: var(--color-background-warning); color: var(--color-text-warning); }
+</style>
+
+<div class="wrap">
+
+  <!-- Configuración del script -->
+  <div class="config-box">
+    <span class="config-label">URL del Apps Script <span id="url-badge" class="badge no">sin configurar</span></span>
+    <input type="text" id="script-url" placeholder="https://script.google.com/macros/s/.../exec" oninput="checkUrl()">
+  </div>
+
+  <div class="steps">
+    <div class="step active" id="s1">1 · Distrito</div>
+    <div class="step" id="s2">2 · Institución</div>
+    <div class="step" id="s3">3 · Estudiante</div>
+  </div>
+
+  <!-- Paso 1 -->
+  <div id="p1">
+    <label class="lbl">Selecciona el distrito</label>
+    <select id="distrito">
+      <option value="">— Seleccionar —</option>
+      <option>09D01 - Ximena</option>
+      <option>09D02 - Ximena</option>
+      <option>09D03 - Centro</option>
+      <option>09D04 - Portete</option>
+      <option>09D05 - Tarqui</option>
+      <option>09D06 - Mapasingue</option>
+      <option>09D07 - Pascuales</option>
+      <option>09D08 - Monte Sinai</option>
+      <option>09D09 - Chongón</option>
+      <option>09D10 - Progreso</option>
+      <option>09D23 - Samborondón</option>
+      <option>09D24 - Durán</option>
+    </select>
+    <div class="err" id="e1"></div>
+    <div class="btn-row"><button class="btn-p" onclick="next(2)">Siguiente →</button></div>
+  </div>
+
+  <!-- Paso 2 -->
+  <div id="p2" style="display:none">
+    <label class="lbl">Nombre de la institución educativa</label>
+    <input type="text" id="institucion" placeholder="Ej: Unidad Educativa San José">
+    <div class="err" id="e2"></div>
+    <div class="btn-row">
+      <button class="btn-b" onclick="next(1)">← Atrás</button>
+      <button class="btn-p" onclick="next(3)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- Paso 3 -->
+  <div id="p3" style="display:none">
+    <label class="lbl">Nombre del estudiante</label>
+    <input type="text" id="estudiante" placeholder="Nombre completo" style="margin-bottom:1rem">
+    <label class="lbl">Archivo</label>
+    <div class="drop" id="drop" onclick="document.getElementById('fi').click()">
+      <input type="file" id="fi" style="display:none">
+      <p id="drop-txt" style="margin:0;font-size:14px;color:var(--color-text-secondary)">↑ Clic o arrastra el archivo aquí</p>
+    </div>
+    <div class="err" id="e3"></div>
+    <div class="btn-row">
+      <button class="btn-b" onclick="next(2)">← Atrás</button>
+      <button class="btn-p" id="submit-btn" onclick="submit()">Subir a Drive</button>
+    </div>
+  </div>
+
+  <!-- Cargando -->
+  <div id="loading" style="display:none;text-align:center;padding:2.5rem 0">
+    <div class="spinner"></div>
+    <p id="lmsg" style="margin-top:1rem;font-size:14px;color:var(--color-text-secondary)">Subiendo archivo a Drive...</p>
+  </div>
+
+  <!-- Éxito -->
+  <div id="ok" style="display:none;text-align:center;padding:1rem 0">
+    <p style="font-size:32px;margin:0">✓</p>
+    <p style="font-weight:500;margin:0.5rem 0 0.25rem">Archivo subido correctamente</p>
+    <p style="font-size:13px;color:var(--color-text-secondary);margin:0 0 0.25rem">Carpeta: <span id="ruta" style="font-weight:500;color:var(--color-text-primary)"></span></p>
+    <div class="link-box" id="result-link"></div>
+    <div class="btn-row" style="margin-top:1rem">
+      <button class="btn-b" onclick="copiar()">Copiar enlace</button>
+      <button class="btn-p" onclick="reset()">Subir otro</button>
+    </div>
+    <p id="copy-ok" style="font-size:12px;color:#1D9E75;margin-top:0.5rem;display:none">¡Enlace copiado!</p>
+  </div>
+
+  <!-- Error -->
+  <div id="fail" style="display:none;padding:1rem 0">
+    <p style="font-weight:500;color:var(--color-text-danger)">No se pudo subir el archivo</p>
+    <p id="fail-msg" style="font-size:13px;color:var(--color-text-secondary)"></p>
+    <div class="btn-row"><button class="btn-p" onclick="show('p3');setSteps(3)">Intentar de nuevo</button></div>
+  </div>
+
+</div>
+
+<script>
+let file = null, resultUrl = '';
+
+const fi = document.getElementById('fi');
+const drop = document.getElementById('drop');
+
+fi.addEventListener('change', () => setFile(fi.files[0]));
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); setFile(e.dataTransfer.files[0]); });
+
+function setFile(f) {
+  if (!f) return;
+  file = f;
+  document.getElementById('drop-txt').textContent = '📄 ' + f.name + '  (' + (f.size/1024).toFixed(0) + ' KB)';
+  drop.classList.add('has-file');
+}
+
+function checkUrl() {
+  const url = document.getElementById('script-url').value.trim();
+  const badge = document.getElementById('url-badge');
+  if (url.startsWith('https://script.google.com/macros/s/')) {
+    badge.textContent = 'configurado ✓'; badge.className = 'badge ok';
+  } else {
+    badge.textContent = 'sin configurar'; badge.className = 'badge no';
+  }
+}
+
+function show(id) {
+  ['p1','p2','p3','loading','ok','fail'].forEach(x => {
+    document.getElementById(x).style.display = x === id ? 'block' : 'none';
+  });
+}
+
+function setSteps(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('s'+i).className = 'step' + (i===n?' active':i<n?' done':'');
+  });
+}
+
+function err(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = msg ? 'block' : 'none';
+}
+
+function next(n) {
+  if (n===2 && !document.getElementById('distrito').value) { err('e1','Selecciona un distrito'); return; }
+  if (n===3 && !document.getElementById('institucion').value.trim()) { err('e2','Escribe el nombre de la institución'); return; }
+  err('e1',''); err('e2','');
+  setSteps(n); show('p'+n);
+}
+
+async function submit() {
+  const est = document.getElementById('estudiante').value.trim();
+  const scriptUrl = document.getElementById('script-url').value.trim();
+  if (!est) { err('e3','Escribe el nombre del estudiante'); return; }
+  if (!file) { err('e3','Selecciona un archivo'); return; }
+  if (!scriptUrl.startsWith('https://script.google.com')) { err('e3','Pega la URL del Apps Script arriba primero'); return; }
+  err('e3','');
+
+  const distrito = document.getElementById('distrito').value;
+  const inst = document.getElementById('institucion').value.trim();
+
+  show('loading');
+
+  try {
+    const b64 = await toB64(file);
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({
+        distrito, institucion: inst, estudiante: est,
+        fileName: file.name,
+        fileBase64: b64,
+        mimeType: file.type || 'application/octet-stream'
+      })
+    });
+
+    const json = await res.json();
+
+    if (json.success && json.link) {
+      resultUrl = json.link;
+      document.getElementById('result-link').textContent = json.link;
+      document.getElementById('ruta').textContent = distrito + ' / ' + inst;
+      show('ok');
+    } else {
+      throw new Error(json.error || 'Respuesta inesperada del script');
+    }
+  } catch(e) {
+    document.getElementById('fail-msg').textContent = e.message;
+    show('fail');
+  }
+}
+
+function toB64(f) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(f);
+  });
+}
+
+function copiar() {
+  navigator.clipboard.writeText(resultUrl).then(() => {
+    const m = document.getElementById('copy-ok');
+    m.style.display = 'block';
+    setTimeout(() => m.style.display = 'none', 2000);
+  });
+}
+
+function reset() {
+  file = null; resultUrl = '';
+  ['distrito','institucion','estudiante'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('drop-txt').textContent = '↑ Clic o arrastra el archivo aquí';
+  drop.classList.remove('has-file');
+  fi.value = '';
+  setSteps(1); show('p1');
+}
+</script>
